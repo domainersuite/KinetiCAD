@@ -100,6 +100,10 @@ free-space mechanisms.
 4. All dimensions positive and plausible: parts 5–2000 mm, radii > 0.5 mm.
 5. Revolve sketches must lie entirely on one side of the revolve axis.
 6. ids: lowercase kebab-case, unique across the document.
+7. **Do not use `arc` primitives in generated profiles.** The kernel's arc
+   endpoint parametrisation is unreliable on XZ/YZ planes ("Sketch is not
+   closed" at regen). Approximate rounded corners with one or two chamfer
+   `line` segments instead.
 
 ## Method
 

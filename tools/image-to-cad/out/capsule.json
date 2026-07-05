@@ -1,0 +1,186 @@
+{
+  "state": {
+    "mode": "modeller",
+    "assembly": {
+      "id": "asm-capsule-v6",
+      "name": "Space Capsule House V6",
+      "groundPartId": "part-chassis",
+      "booleanFeatures": [],
+      "parts": [
+        {
+          "id": "part-chassis",
+          "name": "Chassis",
+          "visible": true,
+          "materialId": "steel-1018",
+          "transform": { "positionMm": [0, 0, 0], "rotationDeg": [0, 0, 0] },
+          "sketches": [
+            {
+              "id": "sk-chassis-1",
+              "name": "Sketch 1",
+              "plane": "XY",
+              "primitives": [
+                { "type": "rectangle", "corner": [-3700, -1400], "width": 7400, "height": 2800 }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-chassis-1",
+              "type": "extrude",
+              "sketchId": "sk-chassis-1",
+              "depthMm": 400,
+              "direction": "forward",
+              "extrudeMode": "new-body"
+            }
+          ]
+        },
+        {
+          "id": "part-body",
+          "name": "Capsule body",
+          "visible": true,
+          "materialId": "pla",
+          "transform": { "positionMm": [0, 0, 0], "rotationDeg": [0, 0, 0] },
+          "sketches": [
+            {
+              "id": "sk-body-profile",
+              "name": "Sketch 1",
+              "plane": "XZ",
+              "primitives": [
+                { "type": "line", "start": [-3650, 400], "end": [3650, 400] },
+                { "type": "line", "start": [3650, 400], "end": [4250, 1000] },
+                { "type": "line", "start": [4250, 1000], "end": [4250, 2700] },
+                { "type": "line", "start": [4250, 2700], "end": [3650, 3300] },
+                { "type": "line", "start": [3650, 3300], "end": [-3650, 3300] },
+                { "type": "line", "start": [-3650, 3300], "end": [-4250, 2700] },
+                { "type": "line", "start": [-4250, 2700], "end": [-4250, 1000] },
+                { "type": "line", "start": [-4250, 1000], "end": [-3650, 400] }
+              ]
+            },
+            {
+              "id": "sk-body-deckcut",
+              "name": "Sketch 2",
+              "plane": "XZ",
+              "primitives": [
+                { "type": "rectangle", "corner": [2400, 800], "width": 1700, "height": 1600 }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-body-shell",
+              "type": "extrude",
+              "sketchId": "sk-body-profile",
+              "depthMm": 3300,
+              "direction": "symmetric",
+              "extrudeMode": "new-body"
+            },
+            {
+              "id": "feat-body-deckcut",
+              "type": "extrude",
+              "sketchId": "sk-body-deckcut",
+              "depthMm": 2700,
+              "direction": "symmetric",
+              "extrudeMode": "subtract"
+            }
+          ]
+        },
+        {
+          "id": "part-door",
+          "name": "Door",
+          "visible": true,
+          "materialId": "acrylic",
+          "transform": { "positionMm": [0, 1650, 0], "rotationDeg": [0, 0, 0] },
+          "sketches": [
+            {
+              "id": "sk-door-1",
+              "name": "Sketch 1",
+              "plane": "XZ",
+              "primitives": [
+                { "type": "rectangle", "corner": [-900, 500], "width": 800, "height": 1800 }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-door-1",
+              "type": "extrude",
+              "sketchId": "sk-door-1",
+              "depthMm": 100,
+              "direction": "symmetric",
+              "extrudeMode": "new-body"
+            }
+          ]
+        },
+        {
+          "id": "part-window",
+          "name": "Porthole",
+          "visible": true,
+          "materialId": "acrylic",
+          "transform": { "positionMm": [0, 1650, 0], "rotationDeg": [0, 0, 0] },
+          "sketches": [
+            {
+              "id": "sk-window-1",
+              "name": "Sketch 1",
+              "plane": "XZ",
+              "primitives": [
+                { "type": "circle", "centre": [1200, 1900], "radius": 450 }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-window-1",
+              "type": "extrude",
+              "sketchId": "sk-window-1",
+              "depthMm": 80,
+              "direction": "symmetric",
+              "extrudeMode": "new-body"
+            }
+          ]
+        },
+        {
+          "id": "part-steps",
+          "name": "Entry steps",
+          "visible": true,
+          "materialId": "aluminium-6061",
+          "transform": { "positionMm": [0, 0, 0], "rotationDeg": [0, 0, 0] },
+          "sketches": [
+            {
+              "id": "sk-steps-1",
+              "name": "Sketch 1",
+              "plane": "XY",
+              "primitives": [
+                { "type": "rectangle", "corner": [-950, 1650], "width": 900, "height": 700 }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-steps-1",
+              "type": "extrude",
+              "sketchId": "sk-steps-1",
+              "depthMm": 350,
+              "direction": "forward",
+              "extrudeMode": "new-body"
+            }
+          ]
+        }
+      ],
+      "mates": [
+        { "id": "mate-fix-body", "type": "fixed", "name": "Body on chassis", "partA": "part-chassis", "partB": "part-body" },
+        { "id": "mate-fix-door", "type": "fixed", "name": "Door in body", "partA": "part-body", "partB": "part-door" },
+        { "id": "mate-fix-window", "type": "fixed", "name": "Porthole in body", "partA": "part-body", "partB": "part-window" },
+        { "id": "mate-fix-steps", "type": "fixed", "name": "Steps on chassis", "partA": "part-chassis", "partB": "part-steps" }
+      ]
+    },
+    "simulation": {
+      "running": false,
+      "paused": false,
+      "timeStepMs": 16.666666666666668,
+      "gravity": [0, 0, -9810],
+      "speedMultiplier": 1,
+      "simulationTimeMs": 0
+    }
+  },
+  "version": 9
+}
