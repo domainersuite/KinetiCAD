@@ -1,0 +1,203 @@
+{
+  "state": {
+    "mode": "modeller",
+    "assembly": {
+      "id": "asm-seesaw",
+      "name": "Assembly 1",
+      "groundPartId": "part-base",
+      "booleanFeatures": [],
+      "parts": [
+        {
+          "id": "part-base",
+          "name": "Base",
+          "visible": true,
+          "materialId": "steel-1018",
+          "transform": {
+            "positionMm": [
+              0,
+              0,
+              0
+            ],
+            "rotationDeg": [
+              0,
+              0,
+              0
+            ]
+          },
+          "sketches": [
+            {
+              "id": "sk-base-1",
+              "name": "Sketch 1",
+              "plane": "XY",
+              "primitives": [
+                {
+                  "type": "rectangle",
+                  "corner": [
+                    -15,
+                    -25
+                  ],
+                  "width": 30,
+                  "height": 50
+                }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-base-1",
+              "type": "extrude",
+              "sketchId": "sk-base-1",
+              "depthMm": 80,
+              "direction": "forward",
+              "extrudeMode": "new-body"
+            }
+          ]
+        },
+        {
+          "id": "part-plank",
+          "name": "Plank",
+          "visible": true,
+          "materialId": "pla",
+          "transform": {
+            "positionMm": [
+              0,
+              0,
+              80
+            ],
+            "rotationDeg": [
+              0,
+              0,
+              0
+            ]
+          },
+          "sketches": [
+            {
+              "id": "sk-plank-1",
+              "name": "Sketch 1",
+              "plane": "XY",
+              "primitives": [
+                {
+                  "type": "rectangle",
+                  "corner": [
+                    -200,
+                    -20
+                  ],
+                  "width": 400,
+                  "height": 40
+                }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-plank-1",
+              "type": "extrude",
+              "sketchId": "sk-plank-1",
+              "depthMm": 8,
+              "direction": "forward",
+              "extrudeMode": "new-body"
+            }
+          ]
+        },
+        {
+          "id": "part-weight",
+          "name": "Weight",
+          "visible": true,
+          "materialId": "steel-1018",
+          "transform": {
+            "positionMm": [
+              170,
+              0,
+              88
+            ],
+            "rotationDeg": [
+              0,
+              0,
+              0
+            ]
+          },
+          "sketches": [
+            {
+              "id": "sk-weight-1",
+              "name": "Sketch 1",
+              "plane": "XY",
+              "primitives": [
+                {
+                  "type": "rectangle",
+                  "corner": [
+                    -20,
+                    -20
+                  ],
+                  "width": 40,
+                  "height": 40
+                }
+              ]
+            }
+          ],
+          "features": [
+            {
+              "id": "feat-weight-1",
+              "type": "extrude",
+              "sketchId": "sk-weight-1",
+              "depthMm": 40,
+              "direction": "forward",
+              "extrudeMode": "new-body"
+            }
+          ]
+        }
+      ],
+      "mates": [
+        {
+          "id": "mate-rev-1",
+          "type": "revolute",
+          "name": "Pivot",
+          "partA": "part-base",
+          "partB": "part-plank",
+          "pivotA": {
+            "kind": "edge",
+            "edgeId": "base-top-centre",
+            "localPoint": [
+              0,
+              0,
+              84
+            ]
+          },
+          "pivotB": {
+            "kind": "edge",
+            "edgeId": "plank-mid-centre",
+            "localPoint": [
+              0,
+              0,
+              4
+            ]
+          },
+          "axisLocal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "id": "mate-fix-1",
+          "type": "fixed",
+          "name": "Weight bond",
+          "partA": "part-plank",
+          "partB": "part-weight"
+        }
+      ]
+    },
+    "simulation": {
+      "running": false,
+      "paused": false,
+      "timeStepMs": 16.666666666666668,
+      "gravity": [
+        0,
+        0,
+        -9810
+      ],
+      "speedMultiplier": 1,
+      "simulationTimeMs": 0
+    }
+  },
+  "version": 9
+}

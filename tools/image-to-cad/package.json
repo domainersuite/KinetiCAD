@@ -1,0 +1,16 @@
+{
+  "name": "kineticad-image-to-cad",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate parametric KinetiCAD models from photos (or text descriptions) with a vision LLM",
+  "bin": {
+    "image-to-cad": "./generate.mjs"
+  },
+  "scripts": {
+    "validate": "node validate.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0"
+  }
+}
