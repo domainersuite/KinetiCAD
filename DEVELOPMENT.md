@@ -58,6 +58,20 @@ window.loadSeed('windmill')  // physics regression canary, 30 RPM motor
 window.loadSeed('orrery')    // 13 bodies, 12 motorised revolute joints
 ```
 
+## Mesh exports (Geant4 GDML, OBJ)
+
+The Modeller toolbar's **Export…** menu writes the assembly as:
+
+- **Geant4 GDML** — each part becomes a `<tessellated>` solid inside an
+  auto-sized `G4_AIR` world box; part materials map to Geant4 NIST materials
+  (PLA/ABS are emitted as custom composites). Loads directly via
+  `G4GDMLParser().Read(...)`.
+- **Wavefront OBJ** — one named `o` object per part; readable by Blender,
+  MeshLab and Geant4's CADMesh.
+
+Both exports weld tessellation vertices (0.1 µm tolerance), drop degenerate
+triangles, and bake world transforms in millimetres, Z-up.
+
 ## Production build
 
 ```sh

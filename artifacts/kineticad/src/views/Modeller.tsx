@@ -1,8 +1,17 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, Loader2, Upload } from 'lucide-react';
+import { ChevronDown, Download, Loader2, Upload } from 'lucide-react';
 import { setImportedShapeMesh } from '@/cad/importedShapeCache';
 import { getCadKernel } from '@/cad/cadClient';
+import { buildGdml } from '@/cad/exporters/gdml';
+import { buildObj } from '@/cad/exporters/obj';
+import type { ExportMeshPart } from '@/cad/exporters/meshExport';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/sonner';
 import { useKinetiCADStore } from '@/state/store';
 import type { MateType } from '@/state/store';
@@ -55,6 +64,7 @@ export default function Modeller() {
   const [exporting, setExporting] = useState(false);
   const [importingStep, setImportingStep] = useState(false);
   const [exportingStep, setExportingStep] = useState(false);
+  const [exportingMesh, setExportingMesh] = useState(false);
   const stepFileInputRef = useRef<HTMLInputElement>(null);
   const modelFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +118,89 @@ export default function Modeller() {
       setExporting(false);
     }
   };
+  const handleExportMesh = async (format: 'gdml' | 'obj') => {
+    const partsWithFeatures = assembly.parts.filter(
+      (p) => p.features && p.features.length > 0,
+    );
+    if (partsWithFeatures.length === 0) {
+      toast.error('Nothing to export. Add at least one feature first.');
+      return;
+    }
+    setExportingMesh(true);
+    const t0 = performance.now();
+    try {
+      const kernel = await getCadKernel();
+      const meshes = await kernel.exportAssemblyMeshes(
+        partsWithFeatures.map((p) => ({
+          partId: p.id,
+          features: p.features,
+          sketches: p.sketches,
+          transform: p.transform,
+        })),
+      );
+      // Join worker meshes back to names/materials via partId.
+      const byId = new Map(partsWithFeatures.map((p) => [p.id, p]));
+      const exportParts: ExportMeshPart[] = meshes.map((m) => {
+        const part = byId.get(m.partId);
+        return {
+          name: part?.name ?? m.partId,
+          materialId: part?.materialId ?? 'aluminium-6061',
+          positions: m.positions,
+          indices: m.indices,
+        };
+      });
+
+      let content: string;
+      let totalTriangles: number;
+      let degenerateDropped: number;
+      if (format === 'gdml') {
+        const r = buildGdml(exportParts);
+        content = r.xml;
+        totalTriangles = r.totalTriangles;
+        degenerateDropped = r.degenerateDropped;
+      } else {
+        const r = buildObj(exportParts);
+        content = r.text;
+        totalTriangles = r.totalTriangles;
+        degenerateDropped = r.degenerateDropped;
+      }
+      const blob = new Blob([content], {
+        type: format === 'gdml' ? 'application/xml' : 'text/plain',
+      });
+      const url = URL.createObjectURL(blob);
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const filename =
+        `kineticad-export-` +
+        `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+        `-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}` +
+        `.${format}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      const durationMs = Math.round(performance.now() - t0);
+      // eslint-disable-next-line no-console
+      console.log(`[${format}-export]`, {
+        partCount: exportParts.length,
+        triangles: totalTriangles,
+        degenerateDropped,
+        fileSizeBytes: blob.size,
+        durationMs,
+      });
+      toast.success(
+        format === 'gdml' ? 'GDML (Geant4) downloaded' : 'OBJ downloaded',
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`[${format}-export] failed:`, err);
+      toast.error('Export failed. Check the console for details.');
+    } finally {
+      setExportingMesh(false);
+    }
+  };
+
   const handleImportStep = async (file: File) => {
     setImportingStep(true);
     const t0 = performance.now();
@@ -489,6 +582,45 @@ export default function Modeller() {
               )}
               <span className="hidden sm:inline">Export STEP</span>
             </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Export mesh formats (Geant4 GDML, OBJ)"
+                  disabled={exportingMesh}
+                  data-testid="export-mesh"
+                  className={[
+                    'flex items-center gap-1.5 px-2 h-7 rounded text-xs font-technical transition-colors',
+                    exportingMesh
+                      ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                      : 'text-foreground hover:bg-secondary active:bg-secondary/80',
+                  ].join(' ')}
+                >
+                  {exportingMesh ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Download size={13} />
+                  )}
+                  <span className="hidden sm:inline">Export…</span>
+                  <ChevronDown size={11} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  data-testid="export-gdml"
+                  onClick={() => handleExportMesh('gdml')}
+                >
+                  Geant4 GDML (.gdml)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-testid="export-obj"
+                  onClick={() => handleExportMesh('obj')}
+                >
+                  Wavefront OBJ (.obj)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <div className="w-px h-5 bg-border mx-1" />
 

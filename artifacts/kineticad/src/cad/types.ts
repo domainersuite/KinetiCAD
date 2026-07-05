@@ -205,6 +205,18 @@ export type ExportPartDescriptor = {
 };
 
 /**
+ * One part's world-space tessellation, as returned by
+ * `exportAssemblyMeshes`. Consumed by the mesh-format exporters (GDML,
+ * OBJ) on the main thread, which join it back to the part's name and
+ * material via `partId`.
+ */
+export type MeshExportResult = {
+  partId: string;
+  positions: Float32Array;
+  indices: Uint32Array;
+};
+
+/**
  * Phase 8 — args for `getMassProperties`. The CAD worker re-executes the
  * upstream feature chain just like a regen, then queries OCCT's
  * `GProp_GProps` for volume / centre of mass / inertia tensor on the
@@ -320,6 +332,17 @@ export type CadKernelApi = {
    * Parts with no features are silently skipped.
    */
   exportAssemblyStl: (parts: ExportPartDescriptor[]) => Promise<Uint8Array>;
+  /**
+   * Build every part's geometry, apply its world transform, and tessellate
+   * each part SEPARATELY (unlike exportAssemblyStl's single compound).
+   * Feeds the mesh-format exporters (GDML for Geant4, OBJ), which need
+   * per-part meshes so names and materials survive the export.
+   *
+   * Parts with no features are silently skipped.
+   */
+  exportAssemblyMeshes: (
+    parts: ExportPartDescriptor[],
+  ) => Promise<MeshExportResult[]>;
   /**
    * Read a STEP file (raw bytes), expand any compound roots into individual
    * solids, tessellate each solid with full edge + face topology, register

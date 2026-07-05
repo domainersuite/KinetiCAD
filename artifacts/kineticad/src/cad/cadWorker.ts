@@ -35,6 +35,7 @@ import type {
   KernelInitResult,
   MassPropertiesArgs,
   MassPropertiesResult,
+  MeshExportResult,
   RevolveArgs,
   TessellatedMesh,
 } from "./types";
@@ -1101,6 +1102,120 @@ const api: CadKernelApi = {
         s?.delete?.();
       }
     }
+  },
+
+  async exportAssemblyMeshes(parts: ExportPartDescriptor[]) {
+    await ensureKernel();
+    if (!ocInstance) throw new Error("CAD kernel failed to initialise");
+    const oc = ocInstance;
+
+    // Per-part world-space tessellations for the mesh-format exporters
+    // (GDML, OBJ). Unlike exportAssemblyStl this keeps parts separate, so
+    // each one can carry its own name and material on the main thread.
+    const results: MeshExportResult[] = [];
+    const transferables: Transferable[] = [];
+
+    for (const part of parts) {
+      if (!part.features || part.features.length === 0) continue;
+
+      let base: any = null;
+      let transformed: any = null;
+      try {
+        base = executeUpstreamChain(oc, part.features, part.sketches);
+
+        // Apply world transform — identical pattern to exportAssemblyStl.
+        const tx = part.transform;
+        const isIdentity =
+          !tx ||
+          (tx.positionMm[0] === 0 &&
+            tx.positionMm[1] === 0 &&
+            tx.positionMm[2] === 0 &&
+            tx.rotationDeg[0] === 0 &&
+            tx.rotationDeg[1] === 0 &&
+            tx.rotationDeg[2] === 0);
+
+        if (isIdentity) {
+          transformed = base;
+        } else {
+          const trsf = new oc.gp_Trsf_1();
+          const origin = new oc.gp_Pnt_3(0, 0, 0);
+          const axisX = new oc.gp_Dir_4(1, 0, 0);
+          const axisY = new oc.gp_Dir_4(0, 1, 0);
+          const axisZ = new oc.gp_Dir_4(0, 0, 1);
+          const ax1X = new oc.gp_Ax1_2(origin, axisX);
+          const ax1Y = new oc.gp_Ax1_2(origin, axisY);
+          const ax1Z = new oc.gp_Ax1_2(origin, axisZ);
+          const trsfRotZ = new oc.gp_Trsf_1();
+          trsfRotZ.SetRotation_1(ax1Z, (tx.rotationDeg[2] * Math.PI) / 180);
+          const trsfRotY = new oc.gp_Trsf_1();
+          trsfRotY.SetRotation_1(ax1Y, (tx.rotationDeg[1] * Math.PI) / 180);
+          const trsfRotX = new oc.gp_Trsf_1();
+          trsfRotX.SetRotation_1(ax1X, (tx.rotationDeg[0] * Math.PI) / 180);
+          const trsfTrans = new oc.gp_Trsf_1();
+          const transVec = new oc.gp_Vec_4(
+            tx.positionMm[0],
+            tx.positionMm[1],
+            tx.positionMm[2],
+          );
+          trsfTrans.SetTranslation_1(transVec);
+          trsf.Multiply(trsfRotZ);
+          trsf.Multiply(trsfRotY);
+          trsf.Multiply(trsfRotX);
+          trsf.Multiply(trsfTrans);
+
+          const transformer = new oc.BRepBuilderAPI_Transform_2(
+            base as never,
+            trsf,
+            true,
+          );
+          transformed = transformer.Shape();
+
+          transformer.delete();
+          transVec.delete();
+          trsfTrans.delete();
+          trsfRotX.delete();
+          trsfRotY.delete();
+          trsfRotZ.delete();
+          ax1Z.delete();
+          ax1Y.delete();
+          ax1X.delete();
+          axisZ.delete();
+          axisY.delete();
+          axisX.delete();
+          origin.delete();
+          trsf.delete();
+        }
+
+        const tess = tessellateShape(oc, transformed);
+        results.push({
+          partId: part.partId,
+          positions: tess.positions,
+          indices: tess.indices,
+        });
+        transferables.push(tess.positions.buffer, tess.indices.buffer);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("[CAD WORKER] exportAssemblyMeshes failed:", err);
+        if (err instanceof Error) throw err;
+        throw new Error(`mesh-export-failed: ${String(err)}`);
+      } finally {
+        if (transformed && transformed !== base) {
+          try {
+            transformed.delete?.();
+          } catch { /* ignore */ }
+        }
+        if (base) {
+          try {
+            base.delete?.();
+          } catch { /* ignore */ }
+        }
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error("mesh-export-failed: no parts with features to export.");
+    }
+    return Comlink.transfer(results, transferables);
   },
 
   // ---- STEP import ----
